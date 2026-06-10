@@ -32,3 +32,19 @@
 ;; Armando la base del requrimiento 1, definimos la estructura principal de la funcion transicion usando un cond 
 ; para validar los cambios de las luces del semaforo. Por ahora este es el camino basico de los 3 colores para ver 
 ; si responde bien el flujo y rebota las transiciones invalidas con la accion por defecto.
+
+
+;; =============================================================================
+;; REQUERIMIENTO 2: TEMPORIZADOR AUTOMATICO
+;; =============================================================================
+(defun timer (timestamp)
+  (let* ((duracion-ciclo (+ 90 120 6))
+         (segundo-actual (mod timestamp duracion-ciclo)))
+    (cond
+      ((< segundo-actual 90) 'en-rojo)
+      ((< segundo-actual 210) 'en-verde)
+      (t 'en-amarillo))))
+
+; Agregamos el requerimiento 2 que es la funcion del timer, sacamos las cuentas de cuanto duraria el ciclo base de las tres
+; luces que se armo antes y nos dio 216 segundos. Usamos la funcion mod para calcular el segundo exacto segun el tiempo que
+; reciba como parametro.
