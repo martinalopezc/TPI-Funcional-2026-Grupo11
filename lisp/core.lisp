@@ -75,6 +75,3 @@
 ;También agreguamos la función de auditoría usando la librería local-time para poder ver mejor la estampa de tiempo, pero cuando le paso un tiempo cualquiera me tira fechas raras en el año 2096. 
 ;Estamos viendo porque pasa eso.
 
-;; Armando la base del requrimiento 1, definimos la estructura principal de la funcion transicion usando un cond 
-; para validar los cambios de las luces del semaforo. Por ahora este es el camino basico de los 3 colores para ver 
-; si responde bien el flujo y rebota las transiciones invalidas con la accion por defecto.
