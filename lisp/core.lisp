@@ -48,3 +48,45 @@
 ; Agregamos el requerimiento 2 que es la funcion del timer, sacamos las cuentas de cuanto duraria el ciclo base de las tres
 ; luces que se armo antes y nos dio 216 segundos. Usamos la funcion mod para calcular el segundo exacto segun el tiempo que
 ; reciba como parametro.
+
+
+
+
+;; =============================================================================
+;; REQUERIMIENTO 4, 5 Y 6: ANALISIS Y PLANIFICACION
+;; =============================================================================
+(defun duracion-ciclo-total ()
+  (+ 90 120 6))
+
+(defun recomendacion-ciclo (duracion)
+  (cond
+    ((< duracion 35) "No recomendado: muy corto")
+    ((> duracion 150) "No recomendado: muy largo")
+    (t "Recomendado: rango optimo")))
+
+(defun ciclos-por-tiempo (minutos)
+  (floor (* minutes 60) (duracion-ciclo-total)))
+
+(defun distribucion-porcentual-una-hora ()
+  (let ((total (float (duracion-ciclo-total))))
+    (list (list 'rojo (* (/ 90 total) 100))
+          (list 'verde (* (/ 120 total) 100))
+          (list 'amarillo (* (/ 6 total) 100)))))
+
+;; =============================================================================
+;; REQUERIMIENTO 7: PRUEBAS
+;; =============================================================================
+(defun probar-todo ()
+  (let ((mi-funcion 'timer))
+    (format t "Resultado: ~A~%" (mi-funcion 10))))
+
+
+; Ya agregue las funciones de recomendacion, la cantidad de ciclos de tiempo y los porcentajes de cada luz
+; en una hora. Agregue una funcion chica abajo de todo para probar si el timer responde usando una variable local
+; pero me da error, dice "la funcion MI-FUNCION no esta definida". Pero no entiendo porque no me deja llamarla si
+; la defini, lo estoy revisando.
+
+
+
+
+
