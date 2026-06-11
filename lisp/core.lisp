@@ -76,9 +76,9 @@
 ;; =============================================================================
 ;; REQUERIMIENTO 7: PRUEBAS
 ;; =============================================================================
-(defun probar-todo ()
-  (let ((mi-funcion 'timer))
-    (format t "Resultado: ~A~%" (mi-funcion 10))))
+;(defun probar-todo ()
+; (let ((mi-funcion 'timer))
+;   (format t "Resultado: ~A~%" (mi-funcion 10))))
 
 
 ; Ya agregue las funciones de recomendacion, la cantidad de ciclos de tiempo y los porcentajes de cada luz
@@ -87,6 +87,12 @@
 ; la defini, lo estoy revisando.
 
 
+(defun probar-todo ()
+  (let ((mi-funcion 'timer))
+       (format t "Resultado: ~A~%" (funcall mi-funcion 10))))
 
+
+; Mi error fue que al guardar el nombre del timer en una variable, no se iba a poder encontrar como funcion directa
+; entonces lo solucione usando funcall.
 
 
