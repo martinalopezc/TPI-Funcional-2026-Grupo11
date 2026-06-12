@@ -49,8 +49,43 @@
 ; luces que se armo antes y nos dio 216 segundos. Usamos la funcion mod para calcular el segundo exacto segun el tiempo que
 ; reciba como parametro.
 
+;; =============================================================================
+;; REQUERIMIENTO 3: SISTEMA DE AUDITORIA
+;; =============================================================================
 
+(defun registrar-cambio (epoch color-anterior color-nuevo)
+  (let* ((dt (local-time:universal-to-timestamp (+ epoch 2208988800)))
+         (fecha-legible (local-time:format-timestring nil dt 
+                          :format '((:year #\-) (:month #\-) (:day #\ ) (:hour #\:) (:min #\:) (:sec)))))
+    (format t "Tiempo [A]: la luz cambió de ~A a ~A%" fecha-legible color-anterior color-nuevo)))
 
+;; =============================================================================
+;; EXTENSION 2
+;; =============================================================================
+(defun informe (datos)
+  (with-open-file (stream "informe-ejecucion-semaforo.txt" 
+                          :direction :output 
+                          :if-exists :supersede 
+                          :if-does-not-exist :create)
+    (format stream "Informe de Ejecucion del Sistema  Semaforico~%")
+    (format stream "========================================~%")
+    (labels ((escribir-lineas (lista-datos)
+               (cond
+                 ((null lista-datos) nil)
+                 (t (let* ((registro (car lista-datos))
+                           (epoch (car registro))
+                           (trans (cadr registro))
+                           (dt (local-time:universal-to-timestamp (+ epoch 2208988800)))
+                           (fecha (local-time:format-timestring nil dt 
+                                    :format '((:year #\-) (:month #\-) (:day #\ ) (:hour #\:) (:min #\:) (:sec)))))
+                      (format stream "A - Transicion: ~A%" fecha trans)
+                      (escribir-lineas (cdr lista-datos)))))))
+      (escribir-lineas datos))
+    (format stream "--- Fin del Informe ---~%")))
+
+; Nos daba error en los años porque unix cuenta el tiempo desde 1970 pero en Lisp arranca desde 1900.
+; Entonces sumamos la diferencia con esa constante para que de la fecha correcta.
+; Tambien se agregó la extensión 2 con la función informe para guardar todo el archivo de texto.
 
 ;; =============================================================================
 ;; REQUERIMIENTO 4, 5 Y 6: ANALISIS Y PLANIFICACION
