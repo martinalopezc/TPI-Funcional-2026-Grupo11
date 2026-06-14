@@ -1,11 +1,21 @@
-data EstadoSemaforo = EnRojo | EnAmarillo | EnVerde | AmarilloIntermitente
-  deriving (Show, Eq) 
+import Data.Time.Clock.POSIX
+import Data.Time.Format.ISO8601 (iso8601Show)
+import Data.Int
 
-  transicion :: EstadoSemaforo -> ColorDestino -> (EstadoSemaforo, String)
-  transicion EnRojo Verde               = (AmarilloIntermitente, "cambiar-a-amarillo-intermitente")
-  transicion AmarilloIntermitente Verde = (EnVerde, "cambiar-a-verde")
-  transicion EnVerde Amarillo               = (AmarilloIntermitente, "cambiar-a-amarillo-intermitente")
-  transicion AmarilloIntermitente Amarillo = (EnAmarillo, "cambiar-a-en-amarillo")
-  transicion EnAmarillo Rojo               = (AmarilloIntermitente, "cambiar-a-amarillo-intermitente")
-  transicion AmarilloIntermitente Rojo     = (EnRojo, "cambiar-a-en-rojo")
-  
+ --Definimos los estados posibles del semáforo
+data Estado = Rojo | Verde | Amarillo | AmarilloIntermitente deriving (Show, Eq)
+
+-- El temporizador calcula el estado según el segundo del ciclo (0 a 224 segundos)
+timer :: Int32 -> Estado
+timer timestamp =
+    let duracionCiclo = 90 + 3 + 120 + 3 + 6 + 3 
+        segundoActual = timestamp `mod` duracionCiclo
+    in condicional segundoActual
+  where
+    condicional s
+        | s < 90  = Rojo
+        | s < 93  = AmarilloIntermitente
+        | s < 213 = Verde
+        | s < 216 = AmarilloIntermitente
+        | s < 222 = Amarillo
+        | otherwise = AmarilloIntermitente
