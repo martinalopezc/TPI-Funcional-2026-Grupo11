@@ -3,7 +3,6 @@
 ;; =============================================================================
 ;; Cargamos la libreria externa local-time usando el gestor Quicklisp para manejar las fechas despues
 (ql:quickload :local-time)
-
 ;; =============================================================================
 ;; REQUERIMIENTO 1: ESTADOS DE TRANSICION
 ;; =============================================================================
