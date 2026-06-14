@@ -42,3 +42,61 @@
   (let ((segundos-totales (* minutos 60)))
     (floor segundos-totales (duracion-ciclo-total))))
 
+
+;; =============================================================================
+;; REQUERIMIENTO 6: INFORME DE DISTRIBUCION TEMPORAL
+;; =============================================================================
+
+;; =============================================================================
+;; FUNCION: distribucion-porcentual-una-hora
+;; NATURALEZA: Pura (Genera calculos de rendimiento porcentual)
+;; ESTRATEGIA DE CONTROL: Evaluacion secuencial en bloques de enlace local (let*)
+;; IMPACTO EN MEMORIA: No destructiva (Genera estructuras compuestas nuevas)
+;; =============================================================================
+(defun distribucion-porcentual-una-hora ()
+  (let* ((total-ciclo (float (duracion-ciclo-total)))
+         (pct-rojo (* (/ 90 total-ciclo) 100))
+         (pct-verde (* (/ 120 total-ciclo) 100))
+         (pct-amarillo (* (/ 6 total-ciclo) 100))
+         (pct-intermitente (* (/ 9 total-ciclo) 100)))
+    (list (list 'rojo pct-rojo)
+          (list 'verde pct-verde)
+          (list 'amarillo pct-amarillo)
+          (list 'intermitente pct-intermitente))))
+
+;; =============================================================================
+;; REQUERIMIENTO 7: ASEGURAMIENTO DE LA CALIDAD (BATERIA DE PRUEBAS)
+;; =============================================================================
+
+;; =============================================================================
+;; FUNCION: ejecutar-suite-pruebas
+;; NATURALEZA: Impura (Despliega resultados de manera interactiva a traves de la terminal)
+;; ESTRATEGIA DE CONTROL: Secuencial iterativa con funciones de orden superior encubiertas
+;; IMPACTO EN MEMORIA: No destructiva
+;; =============================================================================
+(defun ejecutar-suite-pruebas ()
+  (format t "=== DEMOSTRACION DE ASEGURAMIENTO DE LA CALIDAD ===~%~%")
+  
+  (format t "[Prueba Normal] Transicion de Rojo a Verde: ~A~%" (transicion 'en-rojo 'verde))
+  (format t "[Prueba Alternativa] Transicion Intermitente a Verde: ~A~%" (transicion 'amarillo-intermitente 'verde))
+  (format t "[Prueba Invalida] Transicion Incorrecta de Rojo a Amarillo: ~A~%" (transicion 'en-rojo 'amarillo))
+  
+  (format t "~%[Prueba Timer - T=0 (Rojo)]: ~A~%" (timer 0))
+  (format t "[Prueba Timer - T=91 (Intermitente)]: ~A~%" (timer 91))
+  (format t "[Prueba Timer - T=150 (Verde)]: ~A~%" (timer 150))
+  
+  (format t "~%[Prueba Auditoria (Quicklisp local-time)]~%")
+  (registrar-cambio 1774881600 'en-rojo 'amarillo-intermitente)
+  
+  (let ((duracion (duracion-ciclo-total)))
+    (format t "~%[Duracion Calculada]: ~A segundos~%" duracion)
+    (format t "[Recomendacion]: ~A~%" (recomendacion-ciclo duracion)))
+  
+  (format t "~%[Planificacion] Ciclos completos en 15 minutos: ~A~%" (ciclos-por-tiempo 15))
+  (format t "[Planificacion] Ciclos completos en 60 minutos: ~A~%" (ciclos-por-tiempo 60))
+  
+  (format t "~%[Distribucion Temporal Porcentual en 1 Hora]:~%~A~%" (distribucion-porcentual-una-hora))
+  
+  (informe '((1774881600 "ROJO -> AMARILLO-INTERMITENTE")
+             (1774881603 "AMARILLO-INTERMITENTE -> VERDE")))
+  (format t "~%[Persistencia] Archivo 'informe-ejecucion-semaforo.txt' escrito exitosamente.~%"))
