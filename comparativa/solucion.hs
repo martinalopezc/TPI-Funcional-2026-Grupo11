@@ -19,3 +19,22 @@ timer timestamp =
         | s < 216 = AmarilloIntermitente
         | s < 222 = Amarillo
         | otherwise = AmarilloIntermitente
+-- se para registrar el cambio de luces según la marca de tiempo dada
+registrarCambio :: Int32 -> Estado -> Estado -> IO ()
+registrarCambio epoch colorAnterior colorNuevo = do
+    let dt = posixSecondsToUTCTime (fromIntegral epoch)
+    putStrLn $ "Tiempo [" ++ iso8601Show dt ++ "]: la luz cambio de " ++ show colorAnterior ++ " a " ++ show colorNuevo
+
+-- evaluacion del comportamiento del sistema bajo limites de datos
+main :: IO ()
+main = do
+    putStrLn "=== EVALUACION DE SISTEMA==="
+    
+   
+    let timestampEvaluacion = 2147483647 + 1 :: Int32
+    
+  
+    let estadoActual = timer timestampEvaluacion
+    
+    
+    registrarCambio timestampEvaluacion Rojo estadoActual
