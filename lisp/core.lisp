@@ -1,133 +1,54 @@
 ;; =============================================================================
-;; REQUERIMIENTO DE INFRAESTRUCTURA: CARGA DE DEPENDENCIAS (FASE 2)
+;; PARTE 1: NUCLEO DEL SEMAFORO (MODULO DE TRANSICION Y TIMER)
 ;; =============================================================================
-;; Cargamos la libreria externa local-time usando el gestor Quicklisp para manejar las fechas despues
 (ql:quickload :local-time)
 
 ;; =============================================================================
 ;; REQUERIMIENTO 1: ESTADOS DE TRANSICION
 ;; =============================================================================
+
+;; =============================================================================
 ;; FUNCION: transicion
-;; NATURALEZA: Pura (Mismo par de entradas produce la misma lista de salida)
-;; ESTRATEGIA: Funcion Predicado / Condicional Cond
-;; IMPACTO: No destructiva
+;; NATURALEZA: Pura (Sin efectos secundarios, no modifica el entormo)
+;; ESTRATEGIA DE CONTROL: Funcion Predicado (Evalua condiciones logicas usando cond)
+;; IMPACTO EN MEMORIA: No destructiva (Retorna una lista nueva sin alterar parametros)
 ;; =============================================================================
 (defun transicion (color-actual cambiar-a)
   (cond
-    ;; Caminos normales entre las 3 luces basicas (Esto es lo primero de la fase 1)
     ((and (eq color-actual 'en-rojo) (eq cambiar-a 'verde))
-     (list 'en-verde "cambiar-a-verde"))
+     (list 'amarillo-intermitente "cambiar-a-amarillo-intermitente"))
+    ((and (eq color-actual 'amarillo-intermitente) (eq cambiar-a 'verde))
+     (list 'verde "cambiar-a-verde"))
     
-    ((and (eq color-actual 'en-verde) (eq cambiar-a 'amarillo))
-     (list 'en-amarillo "cambiar-a-amarillo"))
+    ((and (eq color-actual 'verde) (eq cambiar-a 'amarillo))
+     (list 'amarillo-intermitente "cambiar-a-amarillo-intermitente"))
+    ((and (eq color-actual 'amarillo-intermitente) (eq cambiar-a 'amarillo))
+     (list 'en-amarillo "cambiar-a-en-amarillo"))
     
     ((and (eq color-actual 'en-amarillo) (eq cambiar-a 'rojo))
-     (list 'en-rojo "cambiar-a-rojo"))
+     (list 'amarillo-intermitente "cambiar-a-amarillo-intermitente"))
+    ((and (eq color-actual 'amarillo-intermitente) (eq cambiar-a 'rojo))
+     (list 'en-rojo "cambiar-a-en-rojo"))
     
-    ;; Comportamiento por defecto ante transiciones inválidas o no permitidas
     (t (list color-actual 'accion-por-defecto))))
 
-
-
-;; Armando la base del requrimiento 1, definimos la estructura principal de la funcion transicion usando un cond 
-; para validar los cambios de las luces del semaforo. Por ahora este es el camino basico de los 3 colores para ver 
-; si responde bien el flujo y rebota las transiciones invalidas con la accion por defecto.
-
+;; =============================================================================
+;; REQUERIMIENTO 2: TEMPORIZADOR AUTOMATICO (CON ITERACION 2)
+;; =============================================================================
 
 ;; =============================================================================
-;; REQUERIMIENTO 2: TEMPORIZADOR AUTOMATICO
+;; FUNCION: timer
+;; NATURALEZA: Pura (Dado un timestamp, siempre retorna el mismo color)
+;; ESTRATEGIA DE CONTROL: Funcion Predicado (Mapea rangos numericos a estados simbolicos)
+;; IMPACTO EN MEMORIA: No destructiva
 ;; =============================================================================
 (defun timer (timestamp)
-  (let* ((duracion-ciclo (+ 90 120 6))
+  (let* ((duracion-ciclo (+ 90 3 120 3 6 3))
          (segundo-actual (mod timestamp duracion-ciclo)))
     (cond
       ((< segundo-actual 90) 'en-rojo)
-      ((< segundo-actual 210) 'en-verde)
-      (t 'en-amarillo))))
-
-; Agregamos el requerimiento 2 que es la funcion del timer, sacamos las cuentas de cuanto duraria el ciclo base de las tres
-; luces que se armo antes y nos dio 216 segundos. Usamos la funcion mod para calcular el segundo exacto segun el tiempo que
-; reciba como parametro.
-
-;; =============================================================================
-;; REQUERIMIENTO 3: SISTEMA DE AUDITORIA
-;; =============================================================================
-
-(defun registrar-cambio (epoch color-anterior color-nuevo)
-  (let* ((dt (local-time:universal-to-timestamp (+ epoch 2208988800)))
-         (fecha-legible (local-time:format-timestring nil dt 
-                          :format '((:year #\-) (:month #\-) (:day #\ ) (:hour #\:) (:min #\:) (:sec)))))
-    (format t "Tiempo [A]: la luz cambió de ~A a ~A%" fecha-legible color-anterior color-nuevo)))
-
-;; =============================================================================
-;; EXTENSION 2
-;; =============================================================================
-(defun informe (datos)
-  (with-open-file (stream "informe-ejecucion-semaforo.txt" 
-                          :direction :output 
-                          :if-exists :supersede 
-                          :if-does-not-exist :create)
-    (format stream "Informe de Ejecucion del Sistema  Semaforico~%")
-    (format stream "========================================~%")
-    (labels ((escribir-lineas (lista-datos)
-               (cond
-                 ((null lista-datos) nil)
-                 (t (let* ((registro (car lista-datos))
-                           (epoch (car registro))
-                           (trans (cadr registro))
-                           (dt (local-time:universal-to-timestamp (+ epoch 2208988800)))
-                           (fecha (local-time:format-timestring nil dt 
-                                    :format '((:year #\-) (:month #\-) (:day #\ ) (:hour #\:) (:min #\:) (:sec)))))
-                      (format stream "A - Transicion: ~A%" fecha trans)
-                      (escribir-lineas (cdr lista-datos)))))))
-      (escribir-lineas datos))
-    (format stream "--- Fin del Informe ---~%")))
-
-; Nos daba error en los años porque unix cuenta el tiempo desde 1970 pero en Lisp arranca desde 1900.
-; Entonces sumamos la diferencia con esa constante para que de la fecha correcta.
-; Tambien se agregó la extensión 2 con la función informe para guardar todo el archivo de texto.
-
-;; =============================================================================
-;; REQUERIMIENTO 4, 5 Y 6: ANALISIS Y PLANIFICACION
-;; =============================================================================
-(defun duracion-ciclo-total ()
-  (+ 90 120 6))
-
-(defun recomendacion-ciclo (duracion)
-  (cond
-    ((< duracion 35) "No recomendado: muy corto")
-    ((> duracion 150) "No recomendado: muy largo")
-    (t "Recomendado: rango optimo")))
-
-(defun ciclos-por-tiempo (minutos)
-  (floor (* minutes 60) (duracion-ciclo-total)))
-
-(defun distribucion-porcentual-una-hora ()
-  (let ((total (float (duracion-ciclo-total))))
-    (list (list 'rojo (* (/ 90 total) 100))
-          (list 'verde (* (/ 120 total) 100))
-          (list 'amarillo (* (/ 6 total) 100)))))
-
-;; =============================================================================
-;; REQUERIMIENTO 7: PRUEBAS
-;; =============================================================================
-;(defun probar-todo ()
-; (let ((mi-funcion 'timer))
-;   (format t "Resultado: ~A~%" (mi-funcion 10))))
-
-
-; Ya agregue las funciones de recomendacion, la cantidad de ciclos de tiempo y los porcentajes de cada luz
-; en una hora. Agregue una funcion chica abajo de todo para probar si el timer responde usando una variable local
-; pero me da error, dice "la funcion MI-FUNCION no esta definida". Pero no entiendo porque no me deja llamarla si
-; la defini, lo estoy revisando.
-
-
-(defun probar-todo ()
-  (let ((mi-funcion 'timer))
-       (format t "Resultado: ~A~%" (funcall mi-funcion 10))))
-
-
-; Mi error fue que al guardar el nombre del timer en una variable, no se iba a poder encontrar como funcion directa
-; entonces lo solucione usando funcall.
-
-
+      ((< segundo-actual 93) 'amarillo-intermitente)
+      ((< segundo-actual 213) 'verde)
+      ((< segundo-actual 216) 'amarillo-intermitente)
+      ((< segundo-actual 222) 'en-amarillo)
+      (t 'amarillo-intermitente))))
