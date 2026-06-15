@@ -4,8 +4,13 @@
 
 
 #  Integrantes:
+
 •	Martina Lopez
+
 •	Ivar Tobias Kaczuba
+
 •	Francisco Meza Arrua
-•	Mariano Sebastian
+
+•	Mariano Sebastian Franco
+
 #  Enlace del video:
