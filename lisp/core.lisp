@@ -1,76 +1,48 @@
 ;; =============================================================================
-;; REQUERIMIENTO DE INFRAESTRUCTURA: CARGA DE DEPENDENCIAS (FASE 2)
+;; PARTE 2: MODULO DE AUDITORIA, LOGGING Y PERSISTENCIA DE ARCHIVOS
 ;; =============================================================================
-;; Cargamos la libreria externa local-time usando el gestor Quicklisp para manejar las fechas despues
-(ql:quickload :local-time)
-;; =============================================================================
-;; REQUERIMIENTO 1: ESTADOS DE TRANSICION
-;; =============================================================================
-;; FUNCION: transicion
-;; NATURALEZA: Pura (Mismo par de entradas produce la misma lista de salida)
-;; ESTRATEGIA: Funcion Predicado / Condicional Cond
-;; IMPACTO: No destructiva
-;; =============================================================================
-(defun transicion (color-actual cambiar-a)
-  (cond
-    ;; Caminos normales entre las 3 luces basicas (Esto es lo primero de la fase 1)
-    ((and (eq color-actual 'en-rojo) (eq cambiar-a 'verde))
-     (list 'en-verde "cambiar-a-verde"))
-    
-    ((and (eq color-actual 'en-verde) (eq cambiar-a 'amarillo))
-     (list 'en-amarillo "cambiar-a-amarillo"))
-    
-    ((and (eq color-actual 'en-amarillo) (eq cambiar-a 'rojo))
-     (list 'en-rojo "cambiar-a-rojo"))
-    
-    ;; Comportamiento por defecto ante transiciones inválidas o no permitidas
-    (t (list color-actual 'accion-por-defecto))))
-
 (ql:quickload :local-time)
 
 ;; =============================================================================
-;; Requerimiento 1: estados de transición ( actualizado con extensión 1 )
+;; REQUERIMIENTO 3 Y EXTENSION 2: SISTEMA DE AUDITORIA Y LOGGING
 ;; =============================================================================
-(defun transicion (color-actual cambiar-a)
-  (cond
-    ((and (eq color-actual 'en-rojo) (eq cambiar-a 'verde))
-     (list 'amarillo-intermitente "cambiar-a-amarillo-intermitente"))
-    ((and (eq color-actual 'amarillo-intermitente) (eq cambiar-a 'verde))
-     (list 'verde "cambiar-a-verde"))
-    ((and (eq color-actual 'verde) (eq cambiar-a 'amarillo))
-     (list 'amarillo-intermitente "cambiar-a-amarillo-intermitente"))
-    ((and (eq color-actual 'amarillo-intermitente) (eq cambiar-a 'amarillo))
-     (list 'en-amarillo "cambiar-a-en-amarillo"))
-    ((and (eq color-actual 'en-amarillo) (eq cambiar-a 'rojo))
-     (list 'amarillo-intermitente "cambiar-a-amarillo-intermitente"))
-    ((and (eq color-actual 'amarillo-intermitente) (eq cambiar-a 'rojo))
-     (list 'en-rojo "cambiar-a-en-rojo"))
-    (t (list color-actual 'accion-por-defecto))))
 
 ;; =============================================================================
-;; Requerimiento 2: temporizador automático ( actualizado con extensión 1 )
-;; =============================================================================
-(defun timer (timestamp)
-  (let* ((duracion-ciclo (+ 90 3 120 3 6 3))
-         (segundo-actual (mod timestamp duracion-ciclo)))
-    (cond
-      ((< segundo-actual 90) 'en-rojo)
-      ((< segundo-actual 93) 'amarillo-intermitente)
-      ((< segundo-actual 213) 'verde)
-      ((< segundo-actual 216) 'amarillo-intermitente)
-      ((< segundo-actual 222) 'en-amarillo)
-      (t 'amarillo-intermitente))))
-
-;; =============================================================================
-;; Requerimiento 3: sistema de auditoría
+;; FUNCION : registrar-cambio
+;; NATURALEZA: Impura (Produce efectos secundarios al imprimir logs en la consola)
+;; ESTRATEGIA DE CONTROL: Secuencial con evaluacion de macros externas (local-time)
+;; IMPACTO EN MEMORIA: No destructiva
 ;; =============================================================================
 (defun registrar-cambio (epoch color-anterior color-nuevo)
-  (let* ((dt (local-time:universal-to-timestamp epoch))
+  (let* ((dt (local-time:universal-to-timestamp (+ epoch 2208988800)))
          (fecha-legible (local-time:format-timestring nil dt 
                           :format '((:year #\-) (:month #\-) (:day #\ ) (:hour #\:) (:min #\:) (:sec)))))
-    (format t "Tiempo [A]: la luz cambió de ~A a ~A%" fecha-legible color-anterior color-nuevo)))
+    (format t "Tiempo [~A]: la luz ha cambiado de ~A a ~A~%" 
+            fecha-legible color-anterior color-nuevo)))
 
-;; Agregamos la iteración 2 y modificamos la transición y el timer para agregar los 3 segundos de amarillo intermitente en el ciclo como pide la extensión 1. 
-;También agreguamos la función de auditoría usando la librería local-time para poder ver mejor la estampa de tiempo, pero cuando le paso un tiempo cualquiera me tira fechas raras en el año 2096. 
-;Estamos viendo porque pasa eso.
-
+;; =============================================================================
+;; FUNCION: informe
+;; NATURALEZA: Impura (Efecto secundario de persistencia, crea y escribe un archivo externo)
+;; ESTRATEGIA DE CONTROL: Recursiva Simple (Implementada mediante la funcion interna escribir-lineas)
+;; IMPACTO EN MEMORIA: No destructiva (Recorre la estructura de datos sin modificarla)
+;; =============================================================================
+(defun informe (datos)
+  (with-open-file (stream "informe-ejecucion-semaforo.txt" 
+                          :direction :output 
+                          :if-exists :superserve 
+                          :if-does-not-exist :create)
+    (format stream "Informe de Ejecucion del Sistema Semaforico~%")
+    (format stream "========================================~%")
+    (labels ((escribir-lineas (lista-datos)
+               (cond
+                 ((null lista-datos) nil)
+                 (t (let* ((registro (car lista-datos))
+                           (epoch (car registro))
+                           (trans (cadr registro))
+                           (dt (local-time:universal-to-timestamp (+ epoch 2208988800)))
+                           (fecha (local-time:format-timestring nil dt 
+                                    :format '((:year #\-) (:month #\-) (:day #\ ) (:hour #\:) (:min #\:) (:sec)))))
+                      (format stream "~A - Transicion: ~A~%" fecha trans)
+                      (escribir-lineas (cdr lista-datos)))))))
+      (escribir-lineas datos))
+    (format stream "--- Fin del Informe ---~%")))
