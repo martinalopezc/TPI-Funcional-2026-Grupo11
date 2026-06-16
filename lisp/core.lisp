@@ -1,34 +1,54 @@
 ;; =============================================================================
-;; REQUERIMIENTO DE INFRAESTRUCTURA: CARGA DE DEPENDENCIAS (FASE 2)
+;; PARTE 1: NUCLEO DEL SEMAFORO (MODULO DE TRANSICION Y TIMER)
 ;; =============================================================================
-;; Cargamos la libreria externa local-time usando el gestor Quicklisp para manejar las fechas despues
 (ql:quickload :local-time)
 
 ;; =============================================================================
 ;; REQUERIMIENTO 1: ESTADOS DE TRANSICION
 ;; =============================================================================
+
+;; =============================================================================
 ;; FUNCION: transicion
-;; NATURALEZA: Pura (Mismo par de entradas produce la misma lista de salida)
-;; ESTRATEGIA: Funcion Predicado / Condicional Cond
-;; IMPACTO: No destructiva
+;; NATURALEZA: Pura (Sin efectos secundarios, no modifica el entormo)
+;; ESTRATEGIA DE CONTROL: Funcion Predicado (Evalua condiciones logicas usando cond)
+;; IMPACTO EN MEMORIA: No destructiva (Retorna una lista nueva sin alterar parametros)
 ;; =============================================================================
 (defun transicion (color-actual cambiar-a)
   (cond
-    ;; Caminos normales entre las 3 luces basicas (Esto es lo primero de la fase 1)
     ((and (eq color-actual 'en-rojo) (eq cambiar-a 'verde))
-     (list 'en-verde "cambiar-a-verde"))
+     (list 'amarillo-intermitente "cambiar-a-amarillo-intermitente"))
+    ((and (eq color-actual 'amarillo-intermitente) (eq cambiar-a 'verde))
+     (list 'verde "cambiar-a-verde"))
     
-    ((and (eq color-actual 'en-verde) (eq cambiar-a 'amarillo))
-     (list 'en-amarillo "cambiar-a-amarillo"))
+    ((and (eq color-actual 'verde) (eq cambiar-a 'amarillo))
+     (list 'amarillo-intermitente "cambiar-a-amarillo-intermitente"))
+    ((and (eq color-actual 'amarillo-intermitente) (eq cambiar-a 'amarillo))
+     (list 'en-amarillo "cambiar-a-en-amarillo"))
     
     ((and (eq color-actual 'en-amarillo) (eq cambiar-a 'rojo))
-     (list 'en-rojo "cambiar-a-rojo"))
+     (list 'amarillo-intermitente "cambiar-a-amarillo-intermitente"))
+    ((and (eq color-actual 'amarillo-intermitente) (eq cambiar-a 'rojo))
+     (list 'en-rojo "cambiar-a-en-rojo"))
     
-    ;; Comportamiento por defecto ante transiciones inválidas o no permitidas
     (t (list color-actual 'accion-por-defecto))))
 
+;; =============================================================================
+;; REQUERIMIENTO 2: TEMPORIZADOR AUTOMATICO (CON ITERACION 2)
+;; =============================================================================
 
-
-;; Armando la base del requrimiento 1, definimos la estructura principal de la funcion transicion usando un cond 
-; para validar los cambios de las luces del semaforo. Por ahora este es el camino basico de los 3 colores para ver 
-; si responde bien el flujo y rebota las transiciones invalidas con la accion por defecto.
+;; =============================================================================
+;; FUNCION: timer
+;; NATURALEZA: Pura (Dado un timestamp, siempre retorna el mismo color)
+;; ESTRATEGIA DE CONTROL: Funcion Predicado (Mapea rangos numericos a estados simbolicos)
+;; IMPACTO EN MEMORIA: No destructiva
+;; =============================================================================
+(defun timer (timestamp)
+  (let* ((duracion-ciclo (+ 90 3 120 3 6 3))
+         (segundo-actual (mod timestamp duracion-ciclo)))
+    (cond
+      ((< segundo-actual 90) 'en-rojo)
+      ((< segundo-actual 93) 'amarillo-intermitente)
+      ((< segundo-actual 213) 'verde)
+      ((< segundo-actual 216) 'amarillo-intermitente)
+      ((< segundo-actual 222) 'en-amarillo)
+      (t 'amarillo-intermitente))))
