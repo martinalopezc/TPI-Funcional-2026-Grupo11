@@ -1,7 +1,6 @@
 ;; =============================================================================
 ;; PARTE 3: MODULO DE PLANIFICACION, ESTADISTICA Y BATERIA DE PRUEBAS
 ;; =============================================================================
-(ql:quickload :local-time)
 
 ;; =============================================================================
 ;; REQUERIMIENTO 4: ANALISIS DE CICLOS SEMAFORICOS
