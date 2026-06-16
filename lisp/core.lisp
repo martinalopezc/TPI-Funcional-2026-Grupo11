@@ -1,7 +1,6 @@
 ;; =============================================================================
 ;; PARTE 2: MODULO DE AUDITORIA, LOGGING Y PERSISTENCIA DE ARCHIVOS
 ;; =============================================================================
-(ql:quickload :local-time)
 
 ;; =============================================================================
 ;; REQUERIMIENTO 3 Y EXTENSION 2: SISTEMA DE AUDITORIA Y LOGGING
